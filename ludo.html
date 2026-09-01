@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ludo</title>
+<style>
+  :root {
+    --red: #e5484d;
+    --green: #46a758;
+    --yellow: #ffb224;
+    --blue: #3b82f6;
+    --red-soft: #fbe4e4;
+    --green-soft: #e2f5e6;
+    --yellow-soft: #fff2d6;
+    --blue-soft: #e2ecfd;
+    --board-line: #d9dee6;
+    --panel: #ffffff;
+    --ink: #1f2733;
+    --muted: #6b7482;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    color: var(--ink);
+    background: radial-gradient(1200px 800px at 50% -10%, #f4f7ff 0%, #e7ecf6 45%, #dbe2f0 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 260px auto 260px;
+    gap: 28px;
+    align-items: center;
+  }
+
+  .title {
+    text-align: center;
+    grid-column: 1 / -1;
+    margin: 0 0 4px;
+  }
+  .title h1 {
+    margin: 0;
+    font-size: 40px;
+    letter-spacing: 8px;
+    background: linear-gradient(90deg, var(--red), var(--yellow) 33%, var(--green) 66%, var(--blue));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 800;
+  }
+  .title p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    letter-spacing: 2px;
+    font-size: 13px;
+  }
+
+  /* ---------- Player panels ---------- */
+  .side { display: flex; flex-direction: column; gap: 20px; }
+
+  .player-card {
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 16px 18px;
+    box-shadow: 0 10px 30px rgba(31, 39, 51, 0.08);
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  .player-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 6px;
+    background: var(--accent);
+  }
+  .player-card.red    { --accent: var(--red); }
+  .player-card.green  { --accent: var(--green); }
+  .player-card.yellow { --accent: var(--yellow); }
+  .player-card.blue   { --accent: var(--blue); }
+
+  .player-card.active {
+    border-color: var(--accent);
+    box-shadow: 0 12px 34px color-mix(in srgb, var(--accent) 35%, transparent);
+    transform: translateY(-2px);
+  }
+
+  .player-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .player-dot {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.15);
+  }
+  .player-name { font-weight: 700; font-size: 16px; }
+  .player-turn {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .player-stats {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .player-stats b { color: var(--ink); font-size: 18px; display: block; }
+
+  /* ---------- Board ---------- */
+  .board-wrap {
+    background: var(--panel);
+    padding: 16px;
+    border-radius: 22px;
+    box-shadow: 0 24px 60px rgba(31, 39, 51, 0.16);
+  }
+  .board {
+    --size: 540px;
+    width: var(--size);
+    height: var(--size);
+    display: grid;
+    grid-template-columns: repeat(15, 1fr);
+    grid-template-rows: repeat(15, 1fr);
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .cell {
+    border: 1px solid var(--board-line);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cell.red    { background: var(--red); }
+  .cell.green  { background: var(--green); }
+  .cell.yellow { background: var(--yellow); }
+  .cell.blue   { background: var(--blue); }
+
+  .star { color: rgba(31,39,51,0.35); font-size: 15px; line-height: 1; }
+  .cell.red .star, .cell.green .star, .cell.yellow .star, .cell.blue .star { color: rgba(255,255,255,0.9); }
+
+  /* Home quadrants */
+  .home {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+  }
+  .home.red    { grid-area: 1 / 1 / 7 / 7;     background: var(--red-soft); }
+  .home.green  { grid-area: 1 / 10 / 7 / 16;   background: var(--green-soft); }
+  .home.blue   { grid-area: 10 / 1 / 16 / 7;   background: var(--blue-soft); }
+  .home.yellow { grid-area: 10 / 10 / 16 / 16; background: var(--yellow-soft); }
+
+  .home-inner {
+    width: 100%; height: 100%;
+    border-radius: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+  .home.red    .home-inner { background: var(--red); }
+  .home.green  .home-inner { background: var(--green); }
+  .home.blue   .home-inner { background: var(--blue); }
+  .home.yellow .home-inner { background: var(--yellow); }
+
+  .slot {
+    background: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 3px 8px rgba(0,0,0,0.12);
+  }
+  .token {
+    width: 62%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff 0 8%, var(--tk) 40%, color-mix(in srgb, var(--tk) 70%, #000) 100%);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.28);
+    border: 2px solid rgba(255,255,255,0.7);
+  }
+  .home.red    .token { --tk: var(--red); }
+  .home.green  .token { --tk: var(--green); }
+  .home.blue   .token { --tk: var(--blue); }
+  .home.yellow .token { --tk: var(--yellow); }
+
+  /* Center */
+  .center {
+    grid-area: 7 / 7 / 10 / 10;
+    position: relative;
+    background: #fff;
+  }
+  .tri { position: absolute; width: 0; height: 0; }
+  .tri.top    { top: 0; left: 0; right: 0; margin: auto; border-left: 90px solid transparent; border-right: 90px solid transparent; border-bottom: 54px solid var(--green); }
+  .tri.bottom { bottom: 0; left: 0; right: 0; margin: auto; border-left: 90px solid transparent; border-right: 90px solid transparent; border-top: 54px solid var(--blue); }
+  .tri.left   { left: 0; top: 0; bottom: 0; margin: auto; border-top: 90px solid transparent; border-bottom: 90px solid transparent; border-right: 54px solid var(--red); }
+  .tri.right  { right: 0; top: 0; bottom: 0; margin: auto; border-top: 90px solid transparent; border-bottom: 90px solid transparent; border-left: 54px solid var(--yellow); }
+  .crown {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 26px; z-index: 2;
+  }
+
+  /* ---------- Dice / controls ---------- */
+  .controls {
+    margin-top: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .dice {
+    width: 74px; height: 74px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(31,39,51,0.18), inset 0 -4px 0 rgba(0,0,0,0.06);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 12px;
+    gap: 4px;
+  }
+  .pip { border-radius: 50%; background: var(--ink); align-self: center; justify-self: center; width: 12px; height: 12px; visibility: hidden; }
+  /* show pips for a 5 */
+  .pip.on { visibility: visible; }
+
+  .roll-btn {
+    border: none;
+    background: linear-gradient(180deg, #2f3a4d, #1f2733);
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 12px 26px;
+    border-radius: 12px;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(31,39,51,0.25);
+    transition: transform .08s ease, box-shadow .08s ease;
+  }
+  .roll-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 22px rgba(31,39,51,0.3); }
+  .roll-btn:active { transform: translateY(0); }
+
+  .hint { color: var(--muted); font-size: 12px; letter-spacing: 1px; }
+
+  @media (max-width: 1024px) {
+    .app { grid-template-columns: 1fr; }
+    .side { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+    .player-card { flex: 1 1 200px; }
+    .board { --size: min(90vw, 540px); }
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="title">
+      <h1>LUDO</h1>
+      <p>CLASSIC BOARD &bull; 2&ndash;4 PLAYERS</p>
+    </div>
+
+    <!-- Left players -->
+    <div class="side">
+      <div class="player-card red active">
+        <div class="player-head">
+          <span class="player-dot"></span>
+          <span class="player-name">Player 1</span>
+          <span class="player-turn">Your turn</span>
+        </div>
+        <div class="player-stats">
+          <span>Home<b>0</b></span>
+          <span>On board<b>2</b></span>
+          <span>Base<b>2</b></span>
+        </div>
+      </div>
+
+      <div class="player-card green">
+        <div class="player-head">
+          <span class="player-dot"></span>
+          <span class="player-name">Player 2</span>
+        </div>
+        <div class="player-stats">
+          <span>Home<b>1</b></span>
+          <span>On board<b>1</b></span>
+          <span>Base<b>2</b></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Board -->
+    <div class="board-wrap">
+      <div class="board" id="board"></div>
+
+      <div class="controls">
+        <div class="dice" id="dice">
+          <span class="pip on"></span><span class="pip"></span><span class="pip on"></span>
+          <span class="pip"></span><span class="pip on"></span><span class="pip"></span>
+          <span class="pip on"></span><span class="pip"></span><span class="pip on"></span>
+        </div>
+        <button class="roll-btn">ROLL DICE</button>
+        <div class="hint">RED TO PLAY</div>
+      </div>
+    </div>
+
+    <!-- Right players -->
+    <div class="side">
+      <div class="player-card yellow">
+        <div class="player-head">
+          <span class="player-dot"></span>
+          <span class="player-name">Player 3</span>
+        </div>
+        <div class="player-stats">
+          <span>Home<b>0</b></span>
+          <span>On board<b>3</b></span>
+          <span>Base<b>1</b></span>
+        </div>
+      </div>
+
+      <div class="player-card blue">
+        <div class="player-head">
+          <span class="player-dot"></span>
+          <span class="player-name">Player 4</span>
+        </div>
+        <div class="player-stats">
+          <span>Home<b>0</b></span>
+          <span>On board<b>0</b></span>
+          <span>Base<b>4</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Presentation-only board builder (no game logic).
+    const board = document.getElementById("board");
+
+    // Home base quadrants with four token slots each.
+    const homes = [
+      { cls: "red" },
+      { cls: "green" },
+      { cls: "blue" },
+      { cls: "yellow" },
+    ];
+    for (const h of homes) {
+      const el = document.createElement("div");
+      el.className = "home " + h.cls;
+      const inner = document.createElement("div");
+      inner.className = "home-inner";
+      for (let i = 0; i < 4; i++) {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        const tk = document.createElement("div");
+        tk.className = "token";
+        slot.appendChild(tk);
+        inner.appendChild(slot);
+      }
+      el.appendChild(inner);
+      board.appendChild(el);
+    }
+
+    // Center finishing triangles + crown.
+    const center = document.createElement("div");
+    center.className = "center";
+    center.innerHTML =
+      '<div class="tri top"></div><div class="tri right"></div>' +
+      '<div class="tri bottom"></div><div class="tri left"></div>' +
+      '<div class="crown">\u265B</div>';
+    board.appendChild(center);
+
+    // Colored home stretches (5 cells each) leading into the center.
+    const stretch = {};
+    for (let c = 2; c <= 6; c++) stretch[`8,${c}`] = "red";
+    for (let r = 2; r <= 6; r++) stretch[`${r},8`] = "green";
+    for (let c = 10; c <= 14; c++) stretch[`8,${c}`] = "yellow";
+    for (let r = 10; r <= 14; r++) stretch[`${r},8`] = "blue";
+
+    // Start squares + safe-star squares.
+    const start = { "7,2": "red", "2,9": "green", "9,14": "yellow", "14,7": "blue" };
+    const safe = new Set(["7,2", "2,9", "9,14", "14,7", "9,3", "3,7", "7,13", "13,9"]);
+
+    const inHome = (r, c) =>
+      (r <= 6 && c <= 6) || (r <= 6 && c >= 10) ||
+      (r >= 10 && c <= 6) || (r >= 10 && c >= 10);
+    const inCenter = (r, c) => r >= 7 && r <= 9 && c >= 7 && c <= 9;
+
+    // Fill the cross-shaped path cells.
+    for (let r = 1; r <= 15; r++) {
+      for (let c = 1; c <= 15; c++) {
+        if (inHome(r, c) || inCenter(r, c)) continue;
+        const key = `${r},${c}`;
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.style.gridArea = `${r} / ${c} / ${r + 1} / ${c + 1}`;
+        const color = start[key] || stretch[key];
+        if (color) cell.classList.add(color);
+        if (safe.has(key)) {
+          const s = document.createElement("span");
+          s.className = "star";
+          s.textContent = "\u2605";
+          cell.appendChild(s);
+        }
+        board.appendChild(cell);
+      }
+    }
+  </script>
+</body>
+</html>
