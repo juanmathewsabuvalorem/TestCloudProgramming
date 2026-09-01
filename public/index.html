@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TestCloudProgramming — Task Manager</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="app__header">
+        <h1>Task Manager</h1>
+        <p class="app__subtitle">A tiny demo app running in the Cloud Agent environment.</p>
+        <span id="status" class="badge badge--pending">connecting…</span>
+      </header>
+
+      <form id="task-form" class="task-form" autocomplete="off">
+        <input
+          id="task-input"
+          class="task-form__input"
+          type="text"
+          placeholder="Add a new task…"
+          aria-label="New task title"
+          required
+        />
+        <button type="submit" class="task-form__button">Add</button>
+      </form>
+
+      <ul id="task-list" class="task-list" aria-live="polite"></ul>
+      <p id="empty" class="empty" hidden>No tasks yet. Add one above!</p>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
